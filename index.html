@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lavrik</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        td {
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            text-align: center;
+        }
+
+        input, textarea {
+            margin: 5px 0;
+        }
+
+        button {
+            margin: 10px 0;
+            padding: 8px 16px;
+            font-size: 15px;
+        }
+
+        #result {
+            white-space: pre;
+            background: #f3f3f3;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simplex Method Solver</h1>
+
+    <h3>Enter matrix A (3x5):</h3>
+    <table id="matrixA">
+        <tr>
+            <td><input type="number" value="0"></td>
+            <td><input type="number" value="0"></td>
+            <td><input type="number" value="2"></td>
+            <td><input type="number" value="0"></td>
+            <td><input type="number" value="-3"></td>
+        </tr>
+        <tr>
+            <td><input type="number" value="0"></td>
+            <td><input type="number" value="1"></td>
+            <td><input type="number" value="0"></td>
+            <td><input type="number" value="-4"></td>
+            <td><input type="number" value="2"></td>
+        </tr>
+        <tr>
+            <td><input type="number" value="2"></td>
+            <td><input type="number" value="0"></td>
+            <td><input type="number" value="1"></td>
+            <td><input type="number" value="0"></td>
+            <td><input type="number" value="0"></td>
+        </tr>
+    </table>
+
+    <h3>Enter vectors:</h3>
+
+    <label>b (3 elements):</label><br>
+    <input id="b" value="5 7 4"><br>
+
+    <label>c (5 elements):</label><br>
+    <input id="c" value="2 2 5 -11 -6"><br>
+
+    <label>Lower bounds d_min (5 elements):</label><br>
+    <input id="d_niz" value="-4 0 2 -1 1"><br>
+
+    <label>Upper bounds d_max (5 elements):</label><br>
+    <input id="d_ver" value="3 5 8 4 9"><br>
+
+    <label>Start vector x (5 elements), select random boudary values:</label><br>
+    <input id="x_start" value="-4 0 2 -1 1 4 1 10"><br>
+
+    <button onclick="runSimplex()">Run Simplex Method</button>
+
+    <h2>Result</h2>
+<pre id="result">...</pre>
+
+    <script>
+        function getMatrixA() {
+            const table = document.getElementById("matrixA");
+            const rows = [...table.rows];
+            return rows.map(row => [...row.cells].map(cell => Number(cell.firstChild.value)));
+        }
+
+        function parseVector(str) {
+            return str.trim().split(/\s+/).map(Number);
+        }
+
+        function runSimplex() {
+            const A = getMatrixA();
+            const b = parseVector(document.getElementById("b").value);
+            const c = parseVector(document.getElementById("c").value);
+            const d_niz = parseVector(document.getElementById("d_niz").value);
+            const d_ver = parseVector(document.getElementById("d_ver").value);
+            const x_start = parseVector(document.getElementById("x_start").value);
+
+            const input = { A, b, c, d_niz, d_ver, x_start };
+            document.getElementById("result").textContent = "Calculating...";
+
+            const res = Module.ccall("simplex_run", "string", ["string"], [JSON.stringify(input)]);
+            document.getElementById("result").textContent = res;
+        }
+    </script>
+    <script src="simplex.js"></script>
+</body>
+</html>
