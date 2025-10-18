@@ -16,6 +16,10 @@ using namespace std;
 using Matrix = vector<vector<double>>;
 using Vector = vector<double>;
 
+double clean(double val, double eps = 1e-10) {
+    return (fabs(val) < eps) ? 0.0 : val;
+}
+
 //  helpers
 Matrix multiply(const Matrix& A, const Matrix& B) {
     if (A.empty() || B.empty() || A[0].size() != B.size())
@@ -155,6 +159,8 @@ string runSimplex(const Matrix& A_in,
     const Vector& x_start)
 {
     ostringstream out;
+   // out << fixed << setprecision(6);
+
     try {
         Matrix A = A_in;
         Vector x = x_start;
@@ -162,7 +168,7 @@ string runSimplex(const Matrix& A_in,
         size_t rows = A.size();
         size_t orig_cols = A[0].size();
         Vector c = c_in;
-        out << "1st phase\n";
+        out << "Phase 1\n";
         bool criteri = false;
 
         Vector omega(rows);
@@ -192,12 +198,13 @@ string runSimplex(const Matrix& A_in,
             J_baz.push_back(orig_cols + i);
         }
 
+        out << "extended matrix A after adding artificial variables" << endl;
         for (auto i : A) {
             for (auto j : i) {
-                cout << j << " ";
+                out << j << " ";
 
             }
-            cout << endl;
+            out << endl;
         }
         Vector d_niz1 = d_niz;
         Vector d_ver1 = d_ver;
@@ -220,7 +227,7 @@ string runSimplex(const Matrix& A_in,
 
         while (!criteri) {
             ++faza1iter;
-            out << "phase1 iteration: " << faza1iter << endl;
+            out << "Iteration " << faza1iter << "\n";
             Matrix A_baz = selectColumns(A, J_baz);
             Vector C_baz = selectElements(c1, J_baz);
             Matrix A_baz_inv = inverse(A_baz);
@@ -261,7 +268,10 @@ string runSimplex(const Matrix& A_in,
             if (flag == -1) { criteri = true; break; }
 
             out << "deltas:  " << endl;
-            for (int i = 0; i < ocenki.size(); ++i) {
+            //for (int i = 0; i < ocenki.size(); ++i) {
+            //    out << "delta_" << i << " = " << ocenki[i] << endl;
+          //  }
+            for (auto i : J_nebaz) {
                 out << "delta_" << i << " = " << ocenki[i] << endl;
             }
 
@@ -353,7 +363,7 @@ string runSimplex(const Matrix& A_in,
         Vector d_niz2(d_niz.begin(), d_niz.begin() + orig_cols);
         Vector d_ver2(d_ver.begin(), d_ver.begin() + orig_cols);
 
-        out << "\n2nd phase (main simplex)\n";
+        out << "Phase 2\n";
 
        // vector<size_t> new_basis;
        // for (size_t col = 0; col < orig_cols && new_basis.size() < rows; ++col)
@@ -367,7 +377,7 @@ string runSimplex(const Matrix& A_in,
         int faza2iter = 0;
         while (!criteri2) {
             ++faza2iter;
-            out << "phase2 iteration: " << faza2iter << endl;
+            out << "Iteration " << faza2iter << "\n";
             Matrix A_baz = selectColumns(A_phase2, J_baz);
             Vector C_baz = selectElements(c, J_baz);
             Matrix A_baz_inv = inverse(A_baz);
@@ -406,7 +416,10 @@ string runSimplex(const Matrix& A_in,
             if (flag == -1) { criteri2 = true; break; }
 
             out << "deltas:  " << endl;
-            for (int i = 0; i < ocenki.size(); ++i) {
+            /*for (int i = 0; i < ocenki.size(); ++i) {
+                out << "delta_" << i << " = " << ocenki[i] << endl;
+            }*/
+            for (auto i : J_nebaz) {
                 out << "delta_" << i << " = " << ocenki[i] << endl;
             }
 
@@ -507,6 +520,7 @@ string runSimplex(const Matrix& A_in,
 extern "C" {
     const char* simplex_run(const char* input_json) {
         try {
+
             json j = json::parse(input_json);
             Matrix A = j["A"].get<Matrix>();         // expects 3x5
             Vector b = j["b"].get<Vector>();

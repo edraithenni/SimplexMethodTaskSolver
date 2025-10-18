@@ -32,13 +32,24 @@
             margin: 10px 0;
             padding: 8px 16px;
             font-size: 15px;
+            border-radius: 1px;
         }
 
         #result {
-            white-space: pre;
+            white-space: pre-wrap;
             background: #f3f3f3;
             padding: 10px;
             border: 1px solid #ddd;
+            font-family: monospace;
+        }
+
+        .iteration-box {
+            display: inline-block;
+            border: 2px solid pink;
+            background-color: #ffe6f2;
+            padding: 4px 8px;
+            margin: 2px 0;
+            border-radius: 0px;
         }
     </style>
 </head>
@@ -73,19 +84,57 @@
     <h3>Enter vectors:</h3>
 
     <label>b (3 elements):</label><br>
-    <input id="b" value="5 7 4"><br>
+    <table id="vectorB">
+        <tr>
+            <td><input type="number" value="5"></td>
+            <td><input type="number" value="7"></td>
+            <td><input type="number" value="4"></td>
+        </tr>
+    </table>
 
     <label>c (5 elements):</label><br>
-    <input id="c" value="2 2 5 -11 -6"><br>
+    <table id="vectorC">
+        <tr>
+            <td><input type="number" value="2"></td>
+            <td><input type="number" value="2"></td>
+            <td><input type="number" value="5"></td>
+            <td><input type="number" value="-11"></td>
+            <td><input type="number" value="-6"></td>
+        </tr>
+    </table>
 
     <label>Lower bounds d_min (5 elements):</label><br>
-    <input id="d_niz" value="-4 0 2 -1 1"><br>
+    <table id="vectorDMin">
+        <tr>
+            <td><input type="number" value="-4"></td>
+            <td><input type="number" value="0"></td>
+            <td><input type="number" value="2"></td>
+            <td><input type="number" value="-1"></td>
+            <td><input type="number" value="1"></td>
+        </tr>
+    </table>
 
     <label>Upper bounds d_max (5 elements):</label><br>
-    <input id="d_ver" value="3 5 8 4 9"><br>
+    <table id="vectorDMax">
+        <tr>
+            <td><input type="number" value="3"></td>
+            <td><input type="number" value="5"></td>
+            <td><input type="number" value="8"></td>
+            <td><input type="number" value="4"></td>
+            <td><input type="number" value="9"></td>
+        </tr>
+    </table>
 
-    <label>Start vector x (5 elements), select random boudary values:</label><br>
-    <input id="x_start" value="3 5 8 4 9"><br>
+    <label>Start vector x (5 elements) select random boundary values:</label><br>
+    <table id="vectorXStart">
+        <tr>
+            <td><input type="number" value="-4"></td>
+            <td><input type="number" value="0"></td>
+            <td><input type="number" value="2"></td>
+            <td><input type="number" value="-1"></td>
+            <td><input type="number" value="1"></td>
+        </tr>
+    </table>
 
     <button onclick="runSimplex()">Run Simplex Method</button>
 
@@ -99,25 +148,66 @@
             return rows.map(row => [...row.cells].map(cell => Number(cell.firstChild.value)));
         }
 
-        function parseVector(str) {
-            return str.trim().split(/\s+/).map(Number);
+        function getVector(id) {
+            const table = document.getElementById(id);
+            const row = table.rows[0];
+            return [...row.cells].map(cell => Number(cell.firstChild.value));
         }
 
-        function runSimplex() {
+        function highlightIterations(text) {
+            const lines = text.split("\n").map(line => {
+                if (/Iteration/i.test(line)) {
+                    return `<span class="iteration-box">${line}</span>`;
+                }
+                return line;
+            });
+            return lines.join("\n");
+        }
+
+        async function runSimplex() {
+            const resultEl = document.getElementById("result");
+            resultEl.textContent = "Calculating...";
+
             const A = getMatrixA();
-            const b = parseVector(document.getElementById("b").value);
-            const c = parseVector(document.getElementById("c").value);
-            const d_niz = parseVector(document.getElementById("d_niz").value);
-            const d_ver = parseVector(document.getElementById("d_ver").value);
-            const x_start = parseVector(document.getElementById("x_start").value);
+            const b = getVector("vectorB");
+            const c = getVector("vectorC");
+            const d_niz = getVector("vectorDMin");
+            const d_ver = getVector("vectorDMax");
+            const x_start = getVector("vectorXStart");
 
             const input = { A, b, c, d_niz, d_ver, x_start };
-            document.getElementById("result").textContent = "Calculating...";
 
-            const res = Module.ccall("simplex_run", "string", ["string"], [JSON.stringify(input)]);
-            document.getElementById("result").textContent = res;
+            const TIMEOUT_MS = 5000; 
+            let timeoutId;
+
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    reject(new Error("timeout"));
+                }, TIMEOUT_MS);
+            });
+
+            const simplexPromise = new Promise((resolve, reject) => {
+                try {
+                    const res = Module.ccall("simplex_run", "string", ["string"], [JSON.stringify(input)]);
+                    resolve(res);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+
+            try {
+                const res = await Promise.race([simplexPromise, timeoutPromise]);
+                clearTimeout(timeoutId);
+                const highlighted = highlightIterations(res);
+                resultEl.innerHTML = highlighted;
+            } catch (err) {
+                clearTimeout(timeoutId);
+                console.error("Simplex failed:", err);
+                resultEl.textContent = "Unprocessed case. Try another start vector (or there are no solutions idk)";
+            }
         }
     </script>
+
     <script src="simplex.js"></script>
 </body>
 </html>
