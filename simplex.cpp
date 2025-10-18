@@ -206,6 +206,7 @@ string runSimplex(const Matrix& A_in,
             }
             out << endl;
         }
+        out << "c = (0,0,0,0,0,-1,-1,-1)" << endl;
         Vector d_niz1 = d_niz;
         Vector d_ver1 = d_ver;
         for (size_t i = 0; i < art_cols; ++i) {
@@ -237,7 +238,7 @@ string runSimplex(const Matrix& A_in,
 
             vector<size_t> J_nebaz;
             set<size_t> J_nebaz_set = allinds;
-            out << "basis indices:\n";
+            out << "basis indices (J_b):\n";
             for (auto& idx : J_baz) { out << idx << " "; J_nebaz_set.erase(idx); }
             out << "\nplan:\n";
             for (auto v : x) out << v << " ";
@@ -267,6 +268,8 @@ string runSimplex(const Matrix& A_in,
             }
             if (flag == -1) { criteri = true; break; }
 
+           
+
             out << "deltas:  " << endl;
             //for (int i = 0; i < ocenki.size(); ++i) {
             //    out << "delta_" << i << " = " << ocenki[i] << endl;
@@ -274,6 +277,8 @@ string runSimplex(const Matrix& A_in,
             for (auto i : J_nebaz) {
                 out << "delta_" << i << " = " << ocenki[i] << endl;
             }
+
+            out << "j_0: " << flag << endl;
 
             Vector l(orig_cols + art_cols);
             l[flag] = sgn(ocenki[flag]);
@@ -341,6 +346,7 @@ string runSimplex(const Matrix& A_in,
                 if (tetas[j] < teta_min) { teta_min = tetas[j]; j_zvezda = j; }
             }
             if (j_zvezda == -1) throw runtime_error("Unbounded in phase 1");
+            out << "min theta idx: " << j_zvezda << endl;
 
             for (auto& v : l) v *= teta_min;
             x = add(x, l);
@@ -385,7 +391,7 @@ string runSimplex(const Matrix& A_in,
 
             vector<size_t> J_nebaz;
             set<size_t> J_nebaz_set = allinds2;
-            out << "basis indices:\n";
+            out << "basis indices(J_b):\n";
             for (auto& idx : J_baz) { out << idx << " "; J_nebaz_set.erase(idx); }
             out << "\nplan:\n";
             for (auto v : x) out << v << " ";
@@ -413,6 +419,9 @@ string runSimplex(const Matrix& A_in,
                 if ((ocenki[j] <= 0 && x[j] == d_niz2[j]) || (ocenki[j] >= 0 && x[j] == d_ver2[j])) continue;
                 flag = (int)j; break;
             }
+
+            out << "j_0: " << flag << endl;
+
             if (flag == -1) { criteri2 = true; break; }
 
             out << "deltas:  " << endl;
@@ -466,6 +475,8 @@ string runSimplex(const Matrix& A_in,
                 if (tetas[j] < teta_min) { teta_min = tetas[j]; j_zvezda = j; }
             }
             if (j_zvezda == -1) throw runtime_error("Unbounded in phase 2");
+
+            out << "min theta idx: " << j_zvezda << endl;
 
             cout << "tetas: " << endl;
             for (auto i : tetas) {
